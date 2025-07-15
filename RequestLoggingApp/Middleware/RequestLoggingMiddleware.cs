@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using RequestLoggingApp.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RequestLoggingApp.Middleware;
 
@@ -13,19 +14,23 @@ public class RequestLoggingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestLoggingMiddleware> _logger;
-    private readonly YourDbContext _dbContext;
+    private readonly IServiceProvider _serviceProvider; // تغییر به IServiceProvider
 
-    public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger, YourDbContext dbContext)
+    public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger, IServiceProvider serviceProvider)
     {
         _next = next;
         _logger = logger;
-        _dbContext = dbContext;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
+           
+            using var scope = context.RequestServices.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<MyDbContext>();
+
             context.Request.EnableBuffering();
             using var reader = new StreamReader(
                 context.Request.Body,
@@ -44,8 +49,8 @@ public class RequestLoggingMiddleware
                 Timestamp = DateTime.UtcNow
             };
 
-            await _dbContext.RequestLogs.AddAsync(requestLog);
-            await _dbContext.SaveChangesAsync();
+            await dbContext.RequestLogs.AddAsync(requestLog);
+            await dbContext.SaveChangesAsync();
 
             _logger.LogInformation("Request logged: {Method} {Path}", context.Request.Method, context.Request.Path);
         }

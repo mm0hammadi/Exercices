@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using RequestLoggingApp.Models;
 
 namespace RequestLoggingApp.Models;
 
-public class YourDbContext : DbContext
+public class MyDbContext : DbContext
 {
-    public YourDbContext(DbContextOptions<YourDbContext> options) : base(options) { }
+    public MyDbContext(DbContextOptions<MyDbContext> options) : base(options) { }
 
     public DbSet<RequestLog> RequestLogs { get; set; }
 }
